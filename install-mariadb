@@ -1,0 +1,44 @@
+MariaDB  主从搭建
+------------------------------------------
+#	systemctl stop mariadb
+#	rpm -qm | grep mariadb
+---卸载
+rpm -e mariadb-server
+rpm -e mariadb
+rpm -e --nodeps mariadb-libs
+------------------------------------------
+--安装
+yum -y install mariadb mariadb-server
+cp /usr/share/mysql/my-huge.cnf /etc/my.cnf
+--修改配置
+vim /etc/my.cnf
+添加配置项:
+## 表名大小写忽略
+lower_case_table_names = 1
+--启动
+systemctl start mariadb
+--开机启动
+systemctl enable mariadb
+systemctl disable firewalld
+-----------------------------------------------------
+--初始化配置,root帐号的密码等信息配置
+/usr/bin/mysql_secure_installation
+-------------------------------------------
+---------------主从配置-------------------------
+---主节点配置
+mysql -uroot -proot
+GRANT REPLICATION SLAVE ON *.* TO 'slave'@'%' IDENTIFIED BY 'slave';
+show master status;
+修改从节点
+vim /etc/my.cnf
+systemctl restart mariadb.service
+mysql -uroot -proot
+CHANGE MASTER TO MASTER_HOST='192.168.110.101',MASTER_USER='slave',MASTER_PASSWORD='slave',MASTER_LOG_FILE='mysql-bin.000003',MASTER_LOG_POS=1292;
+systemctl restart mariadb.service 
+mysql -uroot -proot
+show slave status\G
+-------------------------------------------
+--授权root帐号可以远程登录(主从都要执行)
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
