@@ -1,0 +1,95 @@
+redis-集群搭建
+--单节点安装
+-------------------------------------------------------------------------
+yum install gcc
+tar -xzvf redis-3.2.9.tar.gz  -C /opt/3rdparty/
+cd /opt/3rdparty/redis-3.2.9
+make
+cd /opt/3rdparty/redis-3.2.9/src
+make install PREFIX=/opt/3rdparty/redis
+cd /opt/3rdparty/redis-3.2.9
+vim redis.conf
+-----------------------------------------------------------------------
+vim redis.conf
+daemonize yes
+bind 192.168.110.102
+logfile "/opt/3rdparty/redis-3.2.9/logs"
+dir /opt/3rdparty/redis-3.2.9/datas
+cd /opt/3rdparty/redis-3.2.9/
+mkdir logs datas
+-------------------------------------------------------------------------
+--启动服务
+/opt/3rdparty/redis/bin/redis-server /opt/3rdparty/redis-3.2.9/redis.conf
+--查看是否启动
+ps -ef | grep redis
+---------------------------------------------------------------------
+--客户端脚本测试
+/opt/3rdparty/redis/bin/redis-cli -h 192.168.110.102 -p 6379
+-----------------------------------------------------------------------
+set name aa
+set age 15
+keys *
+get name
+-----------------------------------------------------------------------
+--退出客户端 
+quit
+--停止服务
+/opt/3rdparty/redis/bin/redis-cli -h 192.168.110.102 -p 6379 shutdown
+------------------------------------------------------------------------
+--集群配置
+mkdir -p /opt/3rdparty/redis-cluster
+cd /opt/3rdparty/redis-cluster
+mkdir 7001 7002 7003 7004 7005 7006
+cp /opt/3rdparty/redis-3.2.9/redis.conf /opt/3rdparty/redis-cluster/7001/
+vim /opt/3rdparty/redis-cluster/7001/redis.conf
+----------------------------------------------------------------------
+bind 192.168.110.102
+port 7001
+daemonize yes
+pidfile "/var/run/redis_7001.pid"
+logfile "/opt/3rdparty/redis-cluster/7001/redis.log"
+dir /opt/3rdparty/redis-cluster/7001/datas
+cluster-enabled yes
+cluster-config-file nodes-7001.conf
+appendonly yes
+appendfilename "appendonly.aof"
+appendfsync always
+----------------------------------------------------------------------------
+cp redis.conf ../7002/
+cp redis.conf ../7003/
+cp redis.conf ../7004/
+cp redis.conf ../7005/
+cp redis.conf ../7006/
+-----------------------------
+--操作对应的配置文件
+cd ../7002
+vim redis.conf
+--全局替换
+:%s/7001/7002/g
+mkdir datas
+-----------------------------
+yum install ruby
+yum install rubygems
+gem install redis
+----------------------------------------------------------------------------------
+--启动
+/opt/3rdparty/redis/bin/redis-server /opt/3rdparty/redis-cluster/7001/redis.conf
+/opt/3rdparty/redis/bin/redis-server /opt/3rdparty/redis-cluster/7002/redis.conf
+/opt/3rdparty/redis/bin/redis-server /opt/3rdparty/redis-cluster/7003/redis.conf
+/opt/3rdparty/redis/bin/redis-server /opt/3rdparty/redis-cluster/7004/redis.conf
+/opt/3rdparty/redis/bin/redis-server /opt/3rdparty/redis-cluster/7005/redis.conf
+/opt/3rdparty/redis/bin/redis-server /opt/3rdparty/redis-cluster/7006/redis.conf
+--查看
+ps -ef | grep redis
+----------------------------------------------------------------------------------
+--  --replicas 后边是 数字1  比值
+cd /opt/3rdparty/redis-3.2.9/src
+./redis-trib.rb create --replicas 1 192.168.110.102:7001 192.168.110.102:7002 192.168.110.102:7003 192.168.110.102:7004 192.168.110.102:7005 192.168.110.102:7006
+ ----------------------------------------------------------------------------------
+ --验证
+/opt/3rdparty/redis/bin/redis-cli -c -h 192.168.110.102 -p 7001
+-------------------------------------------------------------
+info
+cluster info
+cluster nodes
+-------------------------------------------------------------
