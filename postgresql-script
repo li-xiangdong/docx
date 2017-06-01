@@ -22,3 +22,15 @@ SELECT a.oid,
        and a.atttypid = t.oid
  ORDER BY a.attnum
  ------------------------------------------------------------------------------------------------------------------------------
+--psd_information_type 为自己扩展的表记录信息记录表
+SELECT row_number() over(order by zt.table_name,a.attnum) rn,zt.id,1,a.attname,'f',1, 
+case WHEN a.attlen> 0 then attlen WHEN a.attlen<0 then 255 ELSE a.atttypmod -4 END as lengthvar,NULL,NULL,NULL,NULL,(a.attnum*10),NULL,
+CASE WHEN a.attnotnull THEN a.attnotnull ELSE 'f' END as nnull,
+CASE WHEN a.attnotnull THEN a.attnotnull ELSE 'f' END as nnull,NULL
+FROM psd_information_type as zt,pg_class c,pg_attribute a
+LEFT OUTER JOIN pg_description b ON a.attrelid=b.objoid AND a.attnum = b.objsubid,pg_type t
+WHERE c.relname = zt.table_name
+       and a.attnum > 0
+       and a.attrelid = c.oid
+       and a.atttypid = t.oid
+ ORDER BY zt.table_name,a.attnum
