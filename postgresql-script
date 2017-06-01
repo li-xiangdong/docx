@@ -1,0 +1,24 @@
+--表信息查询
+SELECT a.oid,
+       a.relname AS name,
+       b.description AS comment
+  FROM pg_class a
+       LEFT OUTER JOIN pg_description b ON b.objsubid=0 AND a.oid = b.objoid
+ WHERE a.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname='hrpackage') --用户表一般存储在public模式下
+   AND a.relkind='r'
+ ORDER BY a.relname
+ ------------------------------------------------------------------------------------------------------------------------------
+ --查询表的字段信息
+ SELECT a.attnum,a.attname AS field,t.typname AS type,
+       case WHEN a.attlen> 0 then attlen ELSE a.atttypmod -4 END as lengthvar,
+       a.attnotnull AS notnull,b.description AS comment
+  FROM pg_class c,
+       pg_attribute a
+       LEFT OUTER JOIN pg_description b ON a.attrelid=b.objoid AND a.attnum = b.objsubid,
+       pg_type t
+ WHERE c.relname = 'psd_object_type'
+       and a.attnum > 0
+       and a.attrelid = c.oid
+       and a.atttypid = t.oid
+ ORDER BY a.attnum
+ ------------------------------------------------------------------------------------------------------------------------------
